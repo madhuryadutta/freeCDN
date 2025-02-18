@@ -2,28 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\File;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Image;
-use Illuminate\Support\Facades\Http;
 
 class ImageController extends Controller
 {
     public function show(Request $request, $domain, $filepath)
     {
-        $url = $domain . '/' . $filepath; // Replace with your external file URL
+        $url = $domain.'/'.$filepath; // Replace with your external file URL
         // Desired file name
         $extension = pathinfo($url, PATHINFO_EXTENSION); // Extract extension
-        $filename = md5($url) . '.' . $extension; // Example: "3a5b8d9fabc123.png"
+        $filename = md5($url).'.'.$extension; // Example: "3a5b8d9fabc123.png"
         $path = $filename;
         $response = Http::get($url);
         if ($response->successful()) {
             Storage::put($path, $response->body()); // Save file in storage/app/downloads/
 
         }
+
         return $this->applyTransformations($filename, []);
     }
+
     private function applyTransformations($filename, $params)
     {
         $imagePath = storage_path("app/{$filename}");
@@ -50,12 +52,12 @@ class ImageController extends Controller
     private function returnToInternet($filePath)
     {
         $imagePath = storage_path("app/{$filePath}");
-        if (!file_exists($imagePath)) {
+        if (! file_exists($imagePath)) {
             return response()->json(['error' => 'Image not found'], 404);
         }
 
         return response()->file($imagePath, [
-            'Cache-Control' => 'public, max-age=31536000'
+            'Cache-Control' => 'public, max-age=31536000',
         ]);
     }
 }

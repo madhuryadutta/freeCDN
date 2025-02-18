@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Mime\MimeTypes;
 
@@ -37,7 +35,7 @@ class FileController extends Controller
         // Here we assume that the file is hosted on raw.githubusercontent.com, gitlab.com, or bitbucket.org
         $baseUrl = $this->getBaseUrl($user, $repo, $tag);
 
-        return $baseUrl . '/' . $file;
+        return $baseUrl.'/'.$file;
     }
 
     private function getBaseUrl($user, $repo, $tag)
@@ -59,6 +57,7 @@ class FileController extends Controller
     {
         // Get the file size from the URL
         $headers = get_headers($fileUrl, 1);
+
         return isset($headers['Content-Length']) ? (int) $headers['Content-Length'] : 0;
     }
 
@@ -69,8 +68,10 @@ class FileController extends Controller
         if (in_array($tag, $shortCacheBranches)) {
             return 60 * 60 * 24; // 1 day
         }
+
         return 60 * 60 * 24 * 365; // 1 year
     }
+
     private function getHeaders($fileUrl, $cacheTime)
     {
         // Use Laravel's File class to guess the MIME type based on the file extension
@@ -79,7 +80,7 @@ class FileController extends Controller
         $headers['Content-Type'] = $mimeType;
 
         // Handle Cache-Control
-        $headers['Cache-Control'] = 'public, max-age=' . $cacheTime;
+        $headers['Cache-Control'] = 'public, max-age='.$cacheTime;
 
         return $headers;
     }
@@ -91,15 +92,14 @@ class FileController extends Controller
         $extension = $fileInfo['extension'] ?? '';
 
         // Check MIME type based on extension using Symfony MimeTypeGuesser
-        $mimeTypes = new MimeTypes();
+        $mimeTypes = new MimeTypes;
         $mimeType = $mimeTypes->getMimeTypes($extension)[0] ?? null;
 
         // Fallback to the default MIME type if not found
-        if (!$mimeType) {
+        if (! $mimeType) {
             $mimeType = 'application/octet-stream'; // Generic binary stream type
         }
 
         return $mimeType;
     }
-
 }

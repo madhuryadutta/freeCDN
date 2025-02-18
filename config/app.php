@@ -171,7 +171,7 @@ return [
         /*
          * Image intervention...
          */
-        Intervention\Image\ImageServiceProvider::class
+        Intervention\Image\ImageServiceProvider::class,
     ])->toArray(),
 
     /*

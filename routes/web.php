@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ImageController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,7 +19,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-
 Route::prefix('gh')->group(function () {
     Route::get('{user}/{repo}/{tag}/{file}', [FileController::class, 'serveFile'])->where(['file' => '.*']);
 });
@@ -31,6 +30,5 @@ Route::prefix('gl')->group(function () {
 // Route::prefix('bb')->group(function () {
 //     Route::get('{user}/{repo}/{tag}/{file}', [FileController::class, 'serveFile'])->where(['file' => '.*']);;
 // });
-
 
 Route::get('/img/{domain}/{file}', [ImageController::class, 'show'])->where(['file' => '.*']);
