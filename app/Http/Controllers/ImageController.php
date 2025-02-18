@@ -17,16 +17,17 @@ class ImageController extends Controller
 
         if (Storage::exists($filename)) {
             return $this->returnImage($filename, ['freeCDN-Cache' => 'HIT']);
+        } else {
+
+            $response = Http::get($url);
+            if (! $response->successful()) {
+                return response()->json(['error' => 'Image could not be fetched'], 400);
+            }
+
+            Storage::put($filename, $response->body());
+
+            return $this->applyTransformations($filename, $request->all());
         }
-
-        $response = Http::get($url);
-        if (! $response->successful()) {
-            return response()->json(['error' => 'Image could not be fetched'], 400);
-        }
-
-        Storage::put($filename, $response->body());
-
-        return $this->applyTransformations($filename, $request->all());
     }
 
     private function applyTransformations($filename, array $params)
