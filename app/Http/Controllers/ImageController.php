@@ -11,49 +11,55 @@ class ImageController extends Controller
 {
     public function show($domain, $filepath, Request $request)
     {
+        // echo '<pre>';
+        // var_dump($request->all());
+        // die();
+        $disk = Storage::disk('public'); // Change 's3' to your actual disk name
         $url = "{$domain}/{$filepath}";
         $extension = pathinfo($url, PATHINFO_EXTENSION);
-        $filename = md5($url).'.'.$extension;
+        $filename = 'image/'.md5($url).'.'.$extension;
 
-        if (Storage::exists($filename)) {
-            return $this->returnImage($filename, ['freeCDN-Cache' => 'HIT']);
+        if ($disk->exists($filename)) {
+            return $this->returnImage($disk, $filename, ['freeCDN-Cache' => 'HIT']);
         } else {
-
             $response = Http::get($url);
+
             if (! $response->successful()) {
                 return response()->json(['error' => 'Image could not be fetched'], 400);
             }
 
-            Storage::put($filename, $response->body());
+            $disk->put($filename, $response->body());
 
-            return $this->applyTransformations($filename, $request->all());
+            return $this->applyTransformations($disk, $filename, $request->all());
         }
     }
 
-    private function applyTransformations($filename, array $params)
+    private function applyTransformations($disk, $filename, array $params)
     {
-        $imagePath = storage_path("app/{$filename}");
+        $imageData = $disk->get($filename);
+        $image = Image::make($imageData);
 
         $width = $params['w'] ?? 800;
         $height = $params['h'] ?? 800;
+        $image->resize($width, $height);
 
-        $image = Image::make($imagePath)->resize($width, $height)->stream();
-        Storage::put($filename, $image->__toString());
+        $disk->put($filename, (string) $image->encode());
 
-        return $this->returnImage($filename, ['freeCDN-Cache' => 'MISS']);
+        return $this->returnImage($disk, $filename, ['freeCDN-Cache' => 'MISS']);
     }
 
-    private function returnImage($filename, $headersArray = [])
+    private function returnImage($disk, $filename, $headersArray = [])
     {
-        $imagePath = storage_path("app/{$filename}");
-
-        if (! file_exists($imagePath)) {
+        if (! $disk->exists($filename)) {
             return response()->json(['error' => 'Image not found'], 404);
         }
+        $mimeType = $disk->mimeType($filename);
+        $header = [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'public, max-age=31536000',
+        ];
+        $headers = array_merge($header, $headersArray);
 
-        $header = ['Cache-Control' => 'public, max-age=31536000'];
-        $headers = array_merge(['Cache-Control' => 'public, max-age=31536000'], $headersArray);
-
-        return response()->file($imagePath, $headers);
+        return response($disk->get($filename), 200)->withHeaders($headers);
     }
 }
